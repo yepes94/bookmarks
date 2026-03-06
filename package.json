@@ -43,6 +43,8 @@
     "clsx": "^2.1.1",
     "cmdk": "1.1.1",
     "date-fns": "4.1.0",
+    "ai": "^6.0.0",
+    "@imgly/background-removal": "^1.5.5",
     "embla-carousel-react": "8.6.0",
     "input-otp": "1.4.2",
     "lucide-react": "^0.564.0",

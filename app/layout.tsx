@@ -1,15 +1,14 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Crimson_Pro, Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const _crimsonPro = Crimson_Pro({ subsets: ["latin"], variable: "--font-crimson" })
+const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.app',
+  title: 'Santos Patronos - Creador de Puntos de Libro',
+  description: 'Herramienta para crear puntos de libro de santos patronos con estilo de linografia y acuarela, listos para imprimir.',
   icons: {
     icon: [
       {
@@ -35,7 +34,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="es">
       <body className="font-sans antialiased">
         {children}
         <Analytics />
