@@ -1,14 +1,15 @@
-import type { Metadata } from 'next'
-import { Crimson_Pro, Inter } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
-import './globals.css'
+import type { Metadata } from "next"
+import { Crimson_Pro, Inter } from "next/font/google"
+import { Analytics } from "@vercel/analytics/next"
+import "./globals.css"
 
 const _crimsonPro = Crimson_Pro({ subsets: ["latin"], variable: "--font-crimson" })
 const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 
 export const metadata: Metadata = {
-  title: 'Santos Patronos - Creador de Puntos de Libro',
-  description: 'Herramienta para crear puntos de libro de santos patronos con estilo de linografia y acuarela, listos para imprimir.',
+  title: "Creador de Puntos de Libro",
+  description:
+    "Herramienta para crear puntos de libro con estilo de linografia y acuarela, listos para imprimir.",
   icons: {
     icon: [
       {
@@ -35,6 +36,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
+      <head>
+        <meta name="color-scheme" content="only light" />
+      </head>
       <body className="font-sans antialiased">
         {children}
         <Analytics />

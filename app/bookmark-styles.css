@@ -1,5 +1,5 @@
 /* ===========================================
-   BOOKMARK STYLES - Santos Patronos
+   BOOKMARK STYLES
    =========================================== */
 
 /* Bookmark dimensions: 5.5cm x 17cm (approx 2.17in x 6.69in) */
@@ -7,10 +7,11 @@
   position: relative;
   width: 220px;
   height: 680px;
-  background-color: #f5f0e8;
+  background-color: color(srgb 0.961 0.941 0.910);
   overflow: hidden;
   flex-shrink: 0;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  color-scheme: light;
 }
 
 /* Torn edges */
@@ -29,6 +30,21 @@
 
 .torn-edge-right {
   right: 0;
+}
+
+/* Background image (AI-generated) */
+.bookmark-bg-image {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.bookmark-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.35;
 }
 
 /* Watercolor washes */
@@ -94,11 +110,11 @@
   letter-spacing: 1px;
 }
 
-.saint-name-block {
+.item-name-block {
   margin-bottom: 8px;
 }
 
-.saint-title {
+.item-prefix {
   font-size: 13px;
   font-weight: 700;
   color: #1a1a1a;
@@ -107,7 +123,7 @@
   margin: 0;
 }
 
-.saint-display-name {
+.item-display-name {
   font-size: 32px;
   font-weight: 800;
   color: #1a1a1a;
@@ -116,7 +132,7 @@
   letter-spacing: -0.5px;
 }
 
-.saint-feast {
+.item-subtitle {
   font-size: 11px;
   font-weight: 600;
   color: #3a3a3a;
@@ -125,26 +141,34 @@
   margin: 4px 0 0 0;
 }
 
-.saint-image-wrapper {
+.item-image-wrapper {
   flex: 1;
   display: flex;
-  align-items: center;
   justify-content: center;
   width: 100%;
   min-height: 0;
   padding: 4px 0;
 }
 
-.saint-image {
-  max-width: 180px;
-  max-height: 340px;
+/* Image position variants */
+.item-image-top {
+  align-items: flex-start;
+}
+.item-image-center {
+  align-items: center;
+}
+.item-image-bottom {
+  align-items: flex-end;
+}
+
+.item-image {
   width: auto;
   height: auto;
   object-fit: contain;
   filter: contrast(1.05);
 }
 
-.saint-placeholder {
+.item-placeholder {
   width: 140px;
   height: 220px;
   display: flex;
@@ -158,7 +182,7 @@
   height: 100%;
 }
 
-.saint-virtue {
+.item-tagline {
   font-size: 10px;
   font-weight: 800;
   color: #1a1a1a;
@@ -166,6 +190,131 @@
   text-transform: uppercase;
   margin: 0;
   padding-top: 8px;
+}
+
+.item-quote {
+  font-size: 10px;
+  font-style: italic;
+  color: #3a3a3a;
+  margin: 0;
+  padding-top: 6px;
+  line-height: 1.4;
+  max-width: 170px;
+  text-align: center;
+}
+
+/* --- LAYOUT: IMAGE TOP --- */
+.layout-image-top {
+  flex-direction: column;
+}
+
+.layout-image-top .item-image-wrapper {
+  flex: 1.2;
+  padding-top: 8px;
+}
+
+.layout-image-top .layout-bottom-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding-bottom: 4px;
+}
+
+.layout-image-top .layout-bottom-info .bookmark-header {
+  margin-bottom: 4px;
+}
+
+.layout-image-top .layout-bottom-info .item-name-block {
+  margin-bottom: 0;
+}
+
+/* --- LAYOUT: IMAGE BOTTOM --- */
+.layout-image-bottom {
+  flex-direction: column;
+}
+
+.layout-image-bottom .layout-top-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding-top: 4px;
+}
+
+.layout-image-bottom .layout-top-info .bookmark-header {
+  margin-bottom: 4px;
+}
+
+.layout-image-bottom .layout-top-info .item-name-block {
+  margin-bottom: 0;
+}
+
+.layout-image-bottom .item-image-wrapper {
+  flex: 1.2;
+  padding-bottom: 8px;
+}
+
+/* --- LAYOUT: FULL IMAGE --- */
+.layout-full-image {
+  padding: 0;
+  position: relative;
+}
+
+.full-image-bg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  z-index: 0;
+}
+
+.full-image-bg.item-image-top {
+  align-items: flex-start;
+}
+.full-image-bg.item-image-center {
+  align-items: center;
+}
+.full-image-bg.item-image-bottom {
+  align-items: flex-end;
+}
+
+.full-image-bg .item-image {
+  width: auto;
+  height: auto;
+}
+
+.full-image-bg .item-placeholder {
+  width: 180px;
+  height: 400px;
+}
+
+.full-image-overlay {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+  padding: 16px 12px;
+  text-align: center;
+}
+
+.full-image-top {
+  background: linear-gradient(to bottom, rgba(245, 240, 232, 0.85) 0%, transparent 100%);
+  padding: 8px 4px 20px;
+  border-radius: 0 0 4px 4px;
+}
+
+.full-image-bottom {
+  background: linear-gradient(to top, rgba(245, 240, 232, 0.9) 0%, transparent 100%);
+  padding: 24px 4px 8px;
+  border-radius: 4px 4px 0 0;
+}
+
+.full-image-bottom .item-display-name {
+  font-size: 28px;
+  text-shadow: 0 1px 4px rgba(245, 240, 232, 0.8);
 }
 
 /* --- BACK SIDE --- */
@@ -223,6 +372,43 @@
   filter: contrast(1.1);
 }
 
+/* --- SOLID BACKGROUND MODE --- */
+.solid-bg .header-title,
+.solid-bg .item-quote,
+.solid-bg .description-text {
+  color: var(--text-secondary, #3a3a3a);
+}
+
+.solid-bg .header-year,
+.solid-bg .item-prefix,
+.solid-bg .item-display-name,
+.solid-bg .item-subtitle,
+.solid-bg .item-tagline,
+.solid-bg .description-period {
+  color: var(--text-primary, #1a1a1a);
+}
+
+.solid-bg .dot {
+  background-color: var(--text-primary, #1a1a1a);
+}
+
+.solid-bg .torn-edge-left,
+.solid-bg .torn-edge-right {
+  display: none;
+}
+
+.solid-bg .watercolor-wash {
+  display: none;
+}
+
+.solid-bg .full-image-top {
+  background: linear-gradient(to bottom, var(--solid-bg-fade, rgba(0,0,0,0.3)) 0%, transparent 100%);
+}
+
+.solid-bg .full-image-bottom {
+  background: linear-gradient(to top, var(--solid-bg-fade, rgba(0,0,0,0.3)) 0%, transparent 100%);
+}
+
 /* --- PAPER TEXTURE --- */
 .bookmark-side::before {
   content: '';
@@ -249,8 +435,13 @@
   }
 
   .print-page {
-    page-break-after: always;
     page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .print-page + .print-page {
+    page-break-before: always;
+    break-before: page;
   }
 
   .bookmark-side {
@@ -259,15 +450,20 @@
   }
 
   .print-sheet-preview {
-    width: 210mm;
-    min-height: 270mm;
-    padding: 8mm 10mm;
+    width: 277mm;
+    height: auto;
+    max-height: 190mm;
+    padding: 0;
     box-shadow: none;
     margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
   }
 
   .print-row {
-    gap: 5mm;
+    gap: 10mm;
   }
 
   .print-bookmark-cell {
@@ -285,12 +481,12 @@
 
 /* ===== PRINT LAYOUT (on-screen preview) ===== */
 .print-sheet-preview {
-  width: 794px; /* A4 width at 96dpi */
-  min-height: 720px;
+  width: 1123px; /* A4 landscape width at 96dpi: 297mm */
+  height: 794px; /* A4 landscape height at 96dpi: 210mm */
   background: white;
-  padding: 32px 24px;
+  padding: 32px 40px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
   margin: 0 auto;
@@ -298,7 +494,7 @@
 
 .print-row {
   display: flex;
-  gap: 12px;
+  gap: 28px;
   justify-content: center;
   align-items: flex-start;
   width: 100%;

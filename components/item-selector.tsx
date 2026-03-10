@@ -1,47 +1,49 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { saints, type Saint } from "@/lib/saints-data"
+import type { BookmarkItem } from "@/lib/bookmark-item"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Search, Check } from "lucide-react"
 
-interface SaintSelectorProps {
-  selectedSaints: Saint[]
-  onToggleSaint: (saint: Saint) => void
+interface ItemSelectorProps {
+  items: BookmarkItem[]
+  selectedItems: BookmarkItem[]
+  onToggleItem: (item: BookmarkItem) => void
   onSelectAll: () => void
   onDeselectAll: () => void
 }
 
-export function SaintSelector({
-  selectedSaints,
-  onToggleSaint,
+export function ItemSelector({
+  items,
+  selectedItems,
+  onToggleItem,
   onSelectAll,
   onDeselectAll,
-}: SaintSelectorProps) {
+}: ItemSelectorProps) {
   const [search, setSearch] = useState("")
 
-  const filteredSaints = useMemo(() => {
-    if (!search.trim()) return saints
+  const filteredItems = useMemo(() => {
+    if (!search.trim()) return items
     const q = search.toLowerCase()
-    return saints.filter(
+    return items.filter(
       (s) =>
         s.name.toLowerCase().includes(q) ||
         s.displayName.toLowerCase().includes(q) ||
-        s.feastDay.toLowerCase().includes(q) ||
-        s.virtue.toLowerCase().includes(q)
+        s.subtitle.toLowerCase().includes(q) ||
+        s.tagline.toLowerCase().includes(q)
     )
-  }, [search])
+  }, [search, items])
 
-  const isSelected = (saint: Saint) =>
-    selectedSaints.some((s) => s.id === saint.id)
+  const isSelected = (item: BookmarkItem) =>
+    selectedItems.some((s) => s.id === item.id)
 
   return (
     <div className="flex flex-col gap-3">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8a7e6b]" />
         <Input
-          placeholder="Buscar santo..."
+          placeholder="Buscar..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-10 bg-[#faf8f4] border-[#d4cfc4] text-[#2a2519] placeholder:text-[#a89e8c] focus-visible:ring-[#8a7e6b]"
@@ -62,18 +64,18 @@ export function SaintSelector({
           Deseleccionar todos
         </button>
         <span className="ml-auto text-xs text-[#8a7e6b] self-center">
-          {selectedSaints.length} de {saints.length}
+          {selectedItems.length} de {items.length}
         </span>
       </div>
 
       <ScrollArea className="h-[520px] rounded-lg border border-[#d4cfc4] bg-[#faf8f4]">
         <div className="p-2 flex flex-col gap-1">
-          {filteredSaints.map((saint) => {
-            const selected = isSelected(saint)
+          {filteredItems.map((item) => {
+            const selected = isSelected(item)
             return (
               <button
-                key={saint.id}
-                onClick={() => onToggleSaint(saint)}
+                key={item.id}
+                onClick={() => onToggleItem(item)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-left transition-all ${
                   selected
                     ? "bg-[#e8e0d0] border border-[#c4b898]"
@@ -91,14 +93,14 @@ export function SaintSelector({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm text-[#2a2519] truncate">
-                    {saint.name}
+                    {item.name}
                   </p>
-                  <p className="text-xs text-[#8a7e6b]">{saint.feastDay}</p>
+                  <p className="text-xs text-[#8a7e6b]">{item.subtitle}</p>
                 </div>
                 <div
                   className="w-3 h-3 rounded-full flex-shrink-0"
-                  style={{ backgroundColor: saint.watercolorFront }}
-                  title={saint.virtue}
+                  style={{ backgroundColor: item.colorFront }}
+                  title={item.tagline}
                 />
               </button>
             )

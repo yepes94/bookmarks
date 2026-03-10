@@ -125,13 +125,27 @@
   }
 }
 
+@page {
+  size: 297mm 210mm;
+  margin: 10mm;
+}
+
 @media print {
   .no-print {
     display: none !important;
   }
-  body {
+  html, body {
     background: white !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    color-adjust: exact;
+    margin: 0;
+    padding: 0;
+  }
+  main {
+    background: white !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: 0 !important;
   }
 }

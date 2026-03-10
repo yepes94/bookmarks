@@ -120,11 +120,12 @@ function toWatercolor(r: number, g: number, b: number, lightness = 75, saturatio
 }
 
 export interface ExtractedColors {
-  dominant: string       // hex of the most prominent color
-  secondary: string      // hex of second most prominent
-  watercolorFront: string // soft watercolor version for front
-  watercolorBack: string  // soft watercolor version for back
-  palette: string[]      // all dominant hex colors
+  dominant: string
+  secondary: string
+  colorFront: string
+  colorBack: string
+  palette: string[]
+  backgroundColor: string | null
 }
 
 export function extractDominantColors(imageSrc: string): Promise<ExtractedColors> {
@@ -173,12 +174,15 @@ export function extractDominantColors(imageSrc: string): Promise<ExtractedColors
       const primary = ranked[0]?.color || [180, 200, 220]
       const secondary = ranked[1]?.color || [180, 200, 180]
 
+      const bgColor = detectEdgeBackground(imageData)
+
       resolve({
         dominant: rgbToHex(primary[0], primary[1], primary[2]),
         secondary: rgbToHex(secondary[0], secondary[1], secondary[2]),
-        watercolorFront: toWatercolor(primary[0], primary[1], primary[2], 78, 40),
-        watercolorBack: toWatercolor(secondary[0], secondary[1], secondary[2], 80, 35),
+        colorFront: toWatercolor(primary[0], primary[1], primary[2], 78, 40),
+        colorBack: toWatercolor(secondary[0], secondary[1], secondary[2], 80, 35),
         palette: ranked.map((r) => rgbToHex(r.color[0], r.color[1], r.color[2])),
+        backgroundColor: bgColor,
       })
     }
     img.onerror = () => resolve(defaultColors())
@@ -186,12 +190,100 @@ export function extractDominantColors(imageSrc: string): Promise<ExtractedColors
   })
 }
 
+/**
+ * Sample pixels from the edges of an image to detect a solid background color.
+ * Returns the hex color if a dominant edge color is found, null otherwise.
+ */
+function detectEdgeBackground(imageData: ImageData): string | null {
+  const { data, width, height } = imageData
+  const edgePixels: RGB[] = []
+  const edgeDepth = Math.max(2, Math.round(Math.min(width, height) * 0.05))
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const isEdge = x < edgeDepth || x >= width - edgeDepth || y < edgeDepth || y >= height - edgeDepth
+      if (!isEdge) continue
+
+      const offset = (y * width + x) * 4
+      const a = data[offset + 3]
+      if (a < 128) continue
+      edgePixels.push([data[offset], data[offset + 1], data[offset + 2]])
+    }
+  }
+
+  if (edgePixels.length < 10) return null
+
+  // Cluster edge pixels into 3 groups
+  const centroids = kMeans(edgePixels, 3, 15)
+  if (centroids.length === 0) return null
+
+  // Count how many edge pixels belong to each cluster
+  const counts = centroids.map(() => 0)
+  for (const px of edgePixels) {
+    let minDist = Infinity
+    let minIdx = 0
+    for (let c = 0; c < centroids.length; c++) {
+      const d = distance(px, centroids[c])
+      if (d < minDist) { minDist = d; minIdx = c }
+    }
+    counts[minIdx]++
+  }
+
+  // The dominant edge color must represent at least 50% of edge pixels
+  const maxIdx = counts.indexOf(Math.max(...counts))
+  const ratio = counts[maxIdx] / edgePixels.length
+  if (ratio < 0.5) return null
+
+  const bg = centroids[maxIdx]
+  return rgbToHex(bg[0], bg[1], bg[2])
+}
+
+/**
+ * Relative luminance per WCAG 2.0
+ */
+function relativeLuminance(hex: string): number {
+  const r = parseInt(hex.slice(1, 3), 16) / 255
+  const g = parseInt(hex.slice(3, 5), 16) / 255
+  const b = parseInt(hex.slice(5, 7), 16) / 255
+
+  const toLinear = (c: number) => c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
+  return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b)
+}
+
+/**
+ * WCAG contrast ratio between two hex colors.
+ */
+export function contrastRatio(hex1: string, hex2: string): number {
+  const l1 = relativeLuminance(hex1)
+  const l2 = relativeLuminance(hex2)
+  const lighter = Math.max(l1, l2)
+  const darker = Math.min(l1, l2)
+  return (lighter + 0.05) / (darker + 0.05)
+}
+
+/**
+ * Returns a text color (dark or light) that contrasts well with the given background.
+ */
+export function getContrastTextColor(bgHex: string): string {
+  const lum = relativeLuminance(bgHex)
+  return lum > 0.4 ? "#1a1a1a" : "#f5f0e8"
+}
+
+/**
+ * Returns a secondary text color that contrasts with the given background.
+ */
+export function getContrastSecondaryColor(bgHex: string): string {
+  const lum = relativeLuminance(bgHex)
+  return lum > 0.4 ? "#3a3a3a" : "#d4cfc4"
+}
+
 function defaultColors(): ExtractedColors {
   return {
     dominant: "#b8d4e3",
     secondary: "#b5c9a8",
-    watercolorFront: "hsl(200, 40%, 78%)",
-    watercolorBack: "hsl(120, 35%, 80%)",
+    colorFront: "hsl(200, 40%, 78%)",
+    colorBack: "hsl(120, 35%, 80%)",
     palette: ["#b8d4e3", "#b5c9a8"],
+    backgroundColor: null,
   }
 }

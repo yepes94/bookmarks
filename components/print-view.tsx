@@ -1,57 +1,71 @@
 "use client"
 
-import type { Saint } from "@/lib/saints-data"
+import type { BookmarkItem } from "@/lib/bookmark-item"
 import type { ExtractedColors } from "@/lib/color-utils"
-import { BookmarkFront } from "@/components/bookmark-front"
+import type { BookmarkTemplate, ItemBackground, ItemImageSize } from "@/lib/template-config"
+import { pickBackground } from "@/lib/template-config"
+import { BookmarkFront, type CustomItemTexts } from "@/components/bookmark-front"
 import { BookmarkBack } from "@/components/bookmark-back"
 
 interface PrintViewProps {
-  selectedSaints: Saint[]
+  selectedItems: BookmarkItem[]
   year: number
   customImages?: Record<string, string>
   customColors?: Record<string, ExtractedColors>
+  backgroundPool?: string[]
+  bgAssignments?: Record<string, number>
+  template?: BookmarkTemplate
+  customTexts?: Record<string, CustomItemTexts>
+  itemBackgrounds?: Record<string, ItemBackground>
+  itemImageSizes?: Record<string, ItemImageSize>
 }
 
 /**
  * Print layout designed for DOUBLE-SIDED printing.
  *
  * Logic:
- * - A4 sheet fits 3 bookmarks per row (3 cols) and 1 row per sheet = 3 bookmarks per sheet.
- *   (Bookmark: 220px wide ~= 58mm. A4 is 210mm. 3 bookmarks + margins fit.)
- * - Page A (odd): 3 FRONTS laid out left-to-right: [1] [2] [3]
- * - Page B (even): 3 BACKS in REVERSE order: [3] [2] [1]
+ * - A4 landscape sheet fits 4 bookmarks per row (4 cols) and 1 row per sheet = 4 bookmarks per sheet.
+ *   (Bookmark: 220px wide ~= 55mm. A4 landscape is 297mm. 4 bookmarks + gaps fit with room for cutting.)
+ * - Page A (odd): 4 FRONTS laid out left-to-right: [1] [2] [3] [4]
+ * - Page B (even): 4 BACKS in REVERSE order: [4] [3] [2] [1]
  *   This way, when the paper is flipped along the long edge for duplex printing,
  *   each back aligns perfectly behind its corresponding front.
  */
 
-const BOOKMARKS_PER_SHEET = 3
+const BOOKMARKS_PER_SHEET = 4
 
-export function PrintView({ selectedSaints, year, customImages = {}, customColors = {} }: PrintViewProps) {
-  // Split saints into groups of BOOKMARKS_PER_SHEET
-  const sheets: Saint[][] = []
-  for (let i = 0; i < selectedSaints.length; i += BOOKMARKS_PER_SHEET) {
-    sheets.push(selectedSaints.slice(i, i + BOOKMARKS_PER_SHEET))
+export function PrintView({ selectedItems, year, customImages = {}, customColors = {}, backgroundPool = [], bgAssignments = {}, template, customTexts = {}, itemBackgrounds = {}, itemImageSizes = {} }: PrintViewProps) {
+  const getBackground = (itemId: string): string | null => {
+    if (backgroundPool.length === 0) return null
+    const assigned = bgAssignments[itemId]
+    if (assigned !== undefined && assigned < backgroundPool.length) {
+      return backgroundPool[assigned]
+    }
+    return pickBackground(backgroundPool, itemId)
+  }
+  const sheets: BookmarkItem[][] = []
+  for (let i = 0; i < selectedItems.length; i += BOOKMARKS_PER_SHEET) {
+    sheets.push(selectedItems.slice(i, i + BOOKMARKS_PER_SHEET))
   }
 
-  if (selectedSaints.length === 0) {
+  if (selectedItems.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px] text-[#8a7e6b]">
         <p className="font-serif text-lg italic">
-          Selecciona al menos un santo para ver la vista de impresion
+          Selecciona al menos una ficha para ver la vista de impresion
         </p>
       </div>
     )
   }
 
-  const totalPrintPages = sheets.length * 2 // fronts + backs
+  const totalPrintPages = sheets.length * 2
 
   return (
-    <div className="flex flex-col gap-8">
-      {/* Controls bar */}
-      <div className="no-print flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-2">
+    <div>
+      <div className="no-print flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
           <p className="text-sm text-[#8a7e6b]">
-            {selectedSaints.length} punto{selectedSaints.length !== 1 ? "s" : ""} de libro
+            {selectedItems.length} punto{selectedItems.length !== 1 ? "s" : ""} de libro
             {" "}&middot;{" "}
             {totalPrintPages} pagina{totalPrintPages !== 1 ? "s" : ""} a imprimir
           </p>
@@ -68,89 +82,85 @@ export function PrintView({ selectedSaints, year, customImages = {}, customColor
         </button>
       </div>
 
-      {/* Sheet pairs */}
-      {sheets.map((sheetSaints, sheetIdx) => {
-        // For the backs, reverse the order so they mirror the fronts when flipped
-        const backsOrder = [...sheetSaints].reverse()
+      {sheets.map((sheetItems, sheetIdx) => {
+        const backsOrder = [...sheetItems].reverse()
 
         return (
-          <div key={sheetIdx} className="flex flex-col gap-6">
-            {/* === PAGE A: FRONTS === */}
-            <div>
-              <div className="no-print mb-2 flex items-center gap-2">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#2a2519] text-[#faf8f4] text-xs font-bold">
-                  {sheetIdx * 2 + 1}
+          <div key={sheetIdx}>
+            <div className="no-print mb-2 flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#2a2519] text-[#faf8f4] text-xs font-bold">
+                {sheetIdx * 2 + 1}
+              </span>
+              <p className="text-xs text-[#8a7e6b] font-medium uppercase tracking-wider">
+                Hoja {sheetIdx + 1} - Cara frontal
+                <span className="text-[10px] normal-case tracking-normal font-normal ml-2 italic">
+                  (imprimir primero)
                 </span>
-                <p className="text-xs text-[#8a7e6b] font-medium uppercase tracking-wider">
-                  Hoja {sheetIdx + 1} - Cara frontal
-                  <span className="text-[10px] normal-case tracking-normal font-normal ml-2 italic">
-                    (imprimir primero)
-                  </span>
-                </p>
-              </div>
+              </p>
+            </div>
 
-              <div className="print-sheet-preview print-page">
-                <div className="print-row">
-                  {sheetSaints.map((saint) => (
-                    <div key={saint.id} className="print-bookmark-cell">
-                      <BookmarkFront
-                        saint={saint}
-                        year={year}
-                        customImage={customImages[saint.id] || null}
-                        customColors={customColors[saint.id] || null}
-                      />
-                    </div>
-                  ))}
-                  {/* Fill empty slots to maintain spacing */}
-                  {Array.from({ length: BOOKMARKS_PER_SHEET - sheetSaints.length }).map((_, i) => (
-                    <div key={`empty-front-${i}`} className="print-bookmark-cell print-bookmark-empty" />
-                  ))}
-                </div>
+            <div className="print-sheet-preview print-page">
+              <div className="print-row">
+                {sheetItems.map((item) => (
+                  <div key={item.id} className="print-bookmark-cell">
+                    <BookmarkFront
+                      item={item}
+                      year={year}
+                      customImage={customImages[item.id] ?? null}
+                      customColors={customColors[item.id] || null}
+                      template={template}
+                      backgroundImage={getBackground(item.id)}
+                      customTexts={customTexts[item.id]}
+                      itemBackground={itemBackgrounds[item.id]}
+                      itemImageSize={itemImageSizes[item.id]}
+                    />
+                  </div>
+                ))}
+                {Array.from({ length: BOOKMARKS_PER_SHEET - sheetItems.length }).map((_, i) => (
+                  <div key={`empty-front-${i}`} className="print-bookmark-cell print-bookmark-empty" />
+                ))}
               </div>
             </div>
 
-            {/* === PAGE B: BACKS (reversed order) === */}
-            <div>
-              <div className="no-print mb-2 flex items-center gap-2">
-                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#6b5d3e] text-[#faf8f4] text-xs font-bold">
-                  {sheetIdx * 2 + 2}
+            <div className="no-print mt-6 mb-2 flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#6b5d3e] text-[#faf8f4] text-xs font-bold">
+                {sheetIdx * 2 + 2}
+              </span>
+              <p className="text-xs text-[#8a7e6b] font-medium uppercase tracking-wider">
+                Hoja {sheetIdx + 1} - Reverso
+                <span className="text-[10px] normal-case tracking-normal font-normal ml-2 italic">
+                  (dar la vuelta al papel e imprimir)
                 </span>
-                <p className="text-xs text-[#8a7e6b] font-medium uppercase tracking-wider">
-                  Hoja {sheetIdx + 1} - Reverso
-                  <span className="text-[10px] normal-case tracking-normal font-normal ml-2 italic">
-                    (dar la vuelta al papel e imprimir)
-                  </span>
-                </p>
-              </div>
+              </p>
+            </div>
 
-              <div className="print-sheet-preview print-page">
-                <div className="print-row">
-                  {backsOrder.map((saint) => (
-                    <div key={saint.id} className="print-bookmark-cell">
-                      <BookmarkBack
-                        saint={saint}
-                        customColors={customColors[saint.id] || null}
-                      />
-                    </div>
-                  ))}
-                  {/* Fill empty slots on the LEFT to maintain alignment */}
-                  {Array.from({ length: BOOKMARKS_PER_SHEET - sheetSaints.length }).map((_, i) => (
-                    <div key={`empty-back-${i}`} className="print-bookmark-cell print-bookmark-empty" />
-                  ))}
-                </div>
+            <div className="print-sheet-preview print-page">
+              <div className="print-row">
+                {backsOrder.map((item) => (
+                  <div key={item.id} className="print-bookmark-cell">
+                    <BookmarkBack
+                      item={item}
+                      customColors={customColors[item.id] || null}
+                      template={template}
+                      backgroundImage={getBackground(item.id)}
+                      itemBackground={itemBackgrounds[item.id]}
+                    />
+                  </div>
+                ))}
+                {Array.from({ length: BOOKMARKS_PER_SHEET - sheetItems.length }).map((_, i) => (
+                  <div key={`empty-back-${i}`} className="print-bookmark-cell print-bookmark-empty" />
+                ))}
               </div>
             </div>
 
-            {/* Separator between sheet groups */}
             {sheetIdx < sheets.length - 1 && (
-              <div className="no-print border-t-2 border-dashed border-[#d4cfc4] pt-2" />
+              <div className="no-print border-t-2 border-dashed border-[#d4cfc4] my-6" />
             )}
           </div>
         )
       })}
 
-      {/* Print instructions */}
-      <div className="no-print mt-4 p-4 bg-[#faf8f4] rounded-lg border border-[#d4cfc4]">
+      <div className="no-print mt-6 p-4 bg-[#faf8f4] rounded-lg border border-[#d4cfc4]">
         <h3 className="text-sm font-bold text-[#2a2519] mb-2">
           Instrucciones para imprimir a doble cara
         </h3>
