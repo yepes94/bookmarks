@@ -6,6 +6,38 @@ __v0_jsx-dev-runtime.ts
 # Common ignores
 node_modules/
 .next/
+.env
+.env.local
 .env*.local
 .DS_Store
-data/users.json
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+prisma/*.db
+
+# Images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+public/uploads/
+data/images/
+
+# Test & Build artifacts
+test-results/
+playwright-report/
+coverage/
+.playwright-mcp/
+
+# Build
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
