@@ -4,11 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma migrate deploy && next build",
     "start": "next start",
     "lint": "eslint .",
     "test": "bun test",
     "test:e2e": "playwright test",
+    "setup": "prisma migrate deploy && prisma generate",
+    "postinstall": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate",
     "migrate:legacy-images": "bun scripts/migrate-legacy-images.ts"
