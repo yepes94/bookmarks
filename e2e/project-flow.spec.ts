@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test"
 
 async function clearLibrary(page: Page) {
   await page.goto("/")
-  await expect(page.getByRole("heading", { name: "Puntos de libro" })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Puntos de libro", exact: true })).toBeVisible()
 
   for (let i = 0; i < 30; i++) {
     const empty = page.getByRole("heading", { name: "Todavía no hay puntos de libro" })
@@ -33,8 +33,8 @@ test.describe("Puntos de libro", () => {
     await page.getByRole("button", { name: "Nuevo punto de libro" }).click()
     await expect(page.getByRole("heading", { name: "Nuevo punto de libro" })).toBeVisible()
 
-    await page.getByLabel("Título").fill(title)
-    await page.getByLabel("Subtítulo").fill("Marzo")
+    await page.getByLabel("Título", { exact: true }).fill(title)
+    await page.getByLabel("Subtítulo", { exact: true }).fill("Marzo")
     await page.getByLabel("Texto del reverso").fill("Que este libro te acompañe.")
     await page.getByRole("button", { name: "Guardar" }).click()
     await expect(page.getByRole("status")).toHaveText("Guardado")
@@ -44,7 +44,7 @@ test.describe("Puntos de libro", () => {
 
     await page.getByRole("button", { name: `Abrir ${title}` }).click()
     await expect(page.getByRole("heading", { name: "Editar punto de libro" })).toBeVisible()
-    await page.getByLabel("Título").fill(edited)
+    await page.getByLabel("Título", { exact: true }).fill(edited)
     await page.getByRole("button", { name: "Guardar" }).click()
     await expect(page.getByRole("status")).toHaveText("Guardado")
 
@@ -63,7 +63,7 @@ test.describe("Puntos de libro", () => {
 
     await page.goto("/")
     await page.getByRole("button", { name: "Nuevo punto de libro" }).click()
-    await page.getByLabel("Título").fill(title)
+    await page.getByLabel("Título", { exact: true }).fill(title)
     await page.getByRole("button", { name: "Guardar" }).click()
     await expect(page.getByRole("status")).toHaveText("Guardado")
     await page.getByRole("button", { name: "Volver" }).click()
