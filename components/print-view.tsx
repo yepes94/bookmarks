@@ -51,9 +51,7 @@ export function PrintView({ selectedItems, year, customImages = {}, customColors
   if (selectedItems.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px] text-[#8a7e6b]">
-        <p className="font-serif text-lg italic">
-          Selecciona al menos una ficha para ver la vista de impresion
-        </p>
+        <p className="font-serif text-lg">Elige al menos un punto de libro para ver las hojas.</p>
       </div>
     )
   }
@@ -64,21 +62,20 @@ export function PrintView({ selectedItems, year, customImages = {}, customColors
     <div>
       <div className="no-print flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div>
-          <p className="text-sm text-[#8a7e6b]">
+          <p className="text-base text-[#5e564c]">
             {selectedItems.length} punto{selectedItems.length !== 1 ? "s" : ""} de libro
-            {" "}&middot;{" "}
-            {totalPrintPages} pagina{totalPrintPages !== 1 ? "s" : ""} a imprimir
+            {" · "}
+            {totalPrintPages} página{totalPrintPages !== 1 ? "s" : ""} a imprimir
           </p>
-          <p className="text-xs text-[#8a7e6b] mt-1 italic">
-            Impresion a doble cara: las caras frontales y los reversos se imprimen en paginas separadas
-            que encajan al dar la vuelta al papel.
+          <p className="mt-1 text-base leading-relaxed text-[#5e564c]">
+            Cuatro por hoja. Los frentes van en una página y los reversos en la siguiente, en orden inverso, para imprimir a doble cara.
           </p>
         </div>
         <button
           onClick={() => window.print()}
-          className="px-5 py-2.5 bg-[#2a2519] text-[#faf8f4] rounded-md font-medium text-sm hover:bg-[#3d3525] transition-colors flex-shrink-0"
+          className="inline-flex min-h-11 flex-shrink-0 items-center justify-center rounded-lg bg-[#241f18] px-4 py-2.5 text-base font-medium text-[#faf8f4] hover:bg-[#3a3328]"
         >
-          Imprimir / Exportar PDF
+          Imprimir hojas
         </button>
       </div>
 

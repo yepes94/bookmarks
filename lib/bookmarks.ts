@@ -14,6 +14,7 @@ export type BookmarkDraft = {
   colorFront: string
   colorBack: string
   image: string | null
+  background: string | null
 }
 
 export type StoredBookmark = BookmarkDraft & { id: string }
@@ -34,6 +35,7 @@ export function emptyDraft(): BookmarkDraft {
     colorFront: DEFAULT_COLOR_FRONT,
     colorBack: DEFAULT_COLOR_BACK,
     image: null,
+    background: null,
   }
 }
 
@@ -86,9 +88,12 @@ function readColor(value: unknown, fallback: string): string {
   return typeof value === "string" && /^#([0-9a-fA-F]{6})$/.test(value) ? value : fallback
 }
 
+function readImage(value: unknown): string | null {
+  return typeof value === "string" && value.startsWith("data:image/") ? value : null
+}
+
 export function parseStoredItem(item: BookmarkRecord): StoredBookmark {
   const extra = readExtra(item.extra)
-  const image = typeof extra.image === "string" && extra.image.startsWith("data:image/") ? extra.image : null
   return {
     id: item.id,
     title: item.title,
@@ -96,7 +101,8 @@ export function parseStoredItem(item: BookmarkRecord): StoredBookmark {
     text: item.description ?? "",
     colorFront: readColor(extra.colorFront, DEFAULT_COLOR_FRONT),
     colorBack: readColor(extra.colorBack, DEFAULT_COLOR_BACK),
-    image,
+    image: readImage(extra.image),
+    background: readImage(extra.background),
   }
 }
 
@@ -109,6 +115,7 @@ export function draftToPayload(draft: BookmarkDraft) {
       colorFront: draft.colorFront,
       colorBack: draft.colorBack,
       image: draft.image,
+      background: draft.background,
     }),
   }
 }
@@ -121,6 +128,7 @@ export function snapshotDraft(draft: BookmarkDraft): string {
     colorFront: draft.colorFront,
     colorBack: draft.colorBack,
     image: draft.image,
+    background: draft.background,
   })
 }
 

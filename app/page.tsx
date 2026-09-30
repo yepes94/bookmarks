@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react"
 import { BookmarkFront } from "@/components/bookmark-front"
 import { BookmarkBack } from "@/components/bookmark-back"
+import { PrintView } from "@/components/print-view"
 import { compressImageDataUrl } from "@/lib/image-compress"
+import { defaultItemBackground, type ItemBackground } from "@/lib/template-config"
 import {
   LIBRARY_NAME,
   LIBRARY_SLUG,
@@ -20,8 +22,10 @@ import {
 } from "@/lib/bookmarks"
 import "@/app/bookmark-styles.css"
 
-type Screen = "library" | "editor"
+type Screen = "library" | "editor" | "sheets"
 type Dialog = "delete" | "discard" | null
+
+const AI_KEY_STORAGE = "bookmark-ai-google-key"
 
 const inputClass =
   "w-full rounded-lg border border-[#d5ccbf] bg-white px-3 py-2.5 text-base text-[#241f18] placeholder:text-[#8a8175] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#241f18]"
@@ -39,7 +43,9 @@ export default function HomePage() {
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const [dialog, setDialog] = useState<Dialog>(null)
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
   const titleRef = useRef<HTMLInputElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
   const newButtonRef = useRef<HTMLButtonElement>(null)
   const searchId = useId()
 
@@ -103,6 +109,7 @@ export default function HomePage() {
       colorFront: bookmark.colorFront,
       colorBack: bookmark.colorBack,
       image: bookmark.image,
+      background: bookmark.background,
     }
     setEditingId(bookmark.id)
     setDraft(next)
@@ -208,6 +215,13 @@ export default function HomePage() {
   const visible = bookmarks.filter((bookmark) => matchesQuery(bookmark, query))
   const previewItem = toPreviewItem(draft, editingId ?? "preview")
   const template = previewTemplateFor(draft)
+  const previewBackground = itemBackgroundFor(draft.background)
+  const selectedBookmarks = bookmarks.filter((bookmark) => selectedIds.includes(bookmark.id))
+
+  const openSheets = () => {
+    setSelectedIds(bookmarks.map((bookmark) => bookmark.id))
+    setScreen("sheets")
+  }
 
   if (status === "loading") {
     return (
@@ -243,9 +257,14 @@ export default function HomePage() {
               </p>
             </div>
             {bookmarks.length > 0 && (
-              <button ref={newButtonRef} type="button" onClick={openNew} className={primaryButtonClass}>
-                Nuevo punto de libro
-              </button>
+              <div className="flex flex-wrap gap-3">
+                <button type="button" onClick={openSheets} className={secondaryButtonClass}>
+                  Imprimir varios
+                </button>
+                <button ref={newButtonRef} type="button" onClick={openNew} className={primaryButtonClass}>
+                  Nuevo punto de libro
+                </button>
+              </div>
             )}
           </header>
 
@@ -312,7 +331,7 @@ export default function HomePage() {
             </section>
           )}
         </div>
-      ) : (
+      ) : screen === "editor" ? (
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-8">
           <header className="no-print flex flex-col gap-4 border-b border-[#ddd4c6] pb-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col items-start gap-3">
@@ -328,7 +347,7 @@ export default function HomePage() {
                 {saveMessage}
               </p>
               <button type="button" onClick={() => window.print()} className={secondaryButtonClass}>
-                Imprimir
+                Imprimir este
               </button>
               <button type="button" onClick={() => void save()} disabled={saving} className={primaryButtonClass}>
                 {saving ? "Guardando…" : "Guardar"}
@@ -400,20 +419,35 @@ export default function HomePage() {
                 </Field>
               </div>
 
-              <Field id="bookmark-image" label="Imagen" hint="Opcional. Aparece en el frente.">
+              <div className="flex flex-col gap-1.5">
+                <p className="text-sm font-medium">Imagen</p>
+                <div className="flex flex-wrap gap-3">
+                  <button type="button" onClick={() => fileRef.current?.click()} className={secondaryButtonClass}>
+                    Elegir imagen
+                  </button>
+                </div>
                 <input
-                  id="bookmark-image"
+                  ref={fileRef}
                   type="file"
                   accept="image/*"
-                  aria-describedby="bookmark-image-hint"
+                  tabIndex={-1}
+                  aria-hidden="true"
                   onChange={(event) => {
                     const file = event.target.files?.[0] ?? null
                     event.target.value = ""
                     void handleImage(file)
                   }}
-                  className="block w-full text-sm text-[#5e564c] file:mr-3 file:rounded-lg file:border file:border-[#d5ccbf] file:bg-white file:px-3 file:py-2 file:text-sm file:font-medium file:text-[#241f18]"
+                  className="sr-only"
                 />
-              </Field>
+                <p className="text-sm leading-relaxed text-[#5e564c]">Opcional. Aparece en el frente.</p>
+              </div>
+
+              <GenerateWithAi
+                title={draft.title}
+                text={draft.text}
+                onImage={(image) => updateDraft({ image })}
+                onBackground={(background) => updateDraft({ background })}
+              />
 
               {draft.image && (
                 <div className="flex items-center gap-3">
@@ -421,6 +455,16 @@ export default function HomePage() {
                   <img src={draft.image} alt="" className="h-16 w-12 rounded-sm border border-[#d5ccbf] object-cover" />
                   <button type="button" onClick={() => updateDraft({ image: null })} className={secondaryButtonClass}>
                     Quitar imagen
+                  </button>
+                </div>
+              )}
+
+              {draft.background && (
+                <div className="flex items-center gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={draft.background} alt="" className="h-16 w-12 rounded-sm border border-[#d5ccbf] object-cover" />
+                  <button type="button" onClick={() => updateDraft({ background: null })} className={secondaryButtonClass}>
+                    Quitar fondo
                   </button>
                 </div>
               )}
@@ -449,6 +493,7 @@ export default function HomePage() {
                       item={previewItem}
                       customImage={draft.image}
                       template={template}
+                      itemBackground={previewBackground}
                       editable={false}
                     />
                   </div>
@@ -458,13 +503,25 @@ export default function HomePage() {
                 <p className="no-print text-sm font-medium text-[#5e564c]">Reverso</p>
                 <div className="preview-frame">
                   <div className="preview-scale">
-                    <BookmarkBack item={previewItem} template={template} />
+                    <BookmarkBack item={previewItem} template={template} itemBackground={previewBackground} />
                   </div>
                 </div>
               </div>
             </section>
           </div>
         </div>
+      ) : (
+        <SheetsScreen
+          bookmarks={bookmarks}
+          selectedIds={selectedIds}
+          onToggle={(id) =>
+            setSelectedIds((current) =>
+              current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
+            )
+          }
+          onBack={() => setScreen("library")}
+          selected={selectedBookmarks}
+        />
       )}
 
       {dialog === "delete" && (
@@ -490,6 +547,206 @@ export default function HomePage() {
         />
       )}
     </main>
+  )
+}
+
+function itemBackgroundFor(url: string | null): ItemBackground | null {
+  if (!url) return null
+  return { ...defaultItemBackground, backgroundType: "image", backgroundImageUrl: url }
+}
+
+function SheetsScreen({
+  bookmarks,
+  selectedIds,
+  selected,
+  onToggle,
+  onBack,
+}: {
+  bookmarks: StoredBookmark[]
+  selectedIds: string[]
+  selected: StoredBookmark[]
+  onToggle: (id: string) => void
+  onBack: () => void
+}) {
+  const customImages: Record<string, string> = {}
+  const itemBackgrounds: Record<string, ItemBackground> = {}
+  for (const bookmark of selected) {
+    if (bookmark.image) customImages[bookmark.id] = bookmark.image
+    const background = itemBackgroundFor(bookmark.background)
+    if (background) itemBackgrounds[bookmark.id] = background
+  }
+
+  const sheetTemplate = {
+    ...previewTemplateFor(emptyDraft()),
+    showSubtitle: true,
+  }
+
+  return (
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-8">
+      <header className="no-print flex flex-col items-start gap-3">
+        <button type="button" onClick={onBack} className={secondaryButtonClass}>
+          Volver
+        </button>
+        <h1 className="font-serif text-3xl leading-tight">Imprimir varios</h1>
+        <p className="max-w-2xl text-base leading-relaxed text-[#5e564c]">
+          Elige los puntos de libro. Se colocan de cuatro en cuatro, con el reverso en la hoja siguiente.
+        </p>
+      </header>
+
+      <fieldset className="no-print flex flex-col gap-2">
+        <legend className="mb-2 text-sm font-medium">Puntos de libro</legend>
+        {bookmarks.map((bookmark) => (
+          <label key={bookmark.id} className="flex min-h-11 items-center gap-3 text-base">
+            <input
+              type="checkbox"
+              className="h-5 w-5 accent-[#241f18]"
+              checked={selectedIds.includes(bookmark.id)}
+              onChange={() => onToggle(bookmark.id)}
+            />
+            <span>{bookmark.title}</span>
+          </label>
+        ))}
+      </fieldset>
+
+      <div className="overflow-x-auto">
+        <PrintView
+          selectedItems={selected.map((bookmark) => toPreviewItem(bookmark, bookmark.id))}
+          year={new Date().getFullYear()}
+          customImages={customImages}
+          template={sheetTemplate}
+          itemBackgrounds={itemBackgrounds}
+        />
+      </div>
+    </div>
+  )
+}
+
+const AI_LEGACY_KEY = "santos-ai-google-key"
+
+function GenerateWithAi({
+  title,
+  text,
+  onImage,
+  onBackground,
+}: {
+  title: string
+  text: string
+  onImage: (dataUrl: string) => void
+  onBackground: (dataUrl: string) => void
+}) {
+  const [apiKey, setApiKey] = useState("")
+  const [showKey, setShowKey] = useState(false)
+  const [busy, setBusy] = useState<"image" | "background" | null>(null)
+  const [message, setMessage] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const saved = localStorage.getItem(AI_KEY_STORAGE) || localStorage.getItem(AI_LEGACY_KEY) || ""
+    if (saved) setApiKey(saved)
+  }, [])
+
+  const generate = async (kind: "image" | "background") => {
+    if (kind === "image" && !title.trim()) {
+      setError("Escribe un título antes de generar la imagen.")
+      return
+    }
+    const key = apiKey.trim()
+    if (!key) {
+      setShowKey(true)
+      setError("Escribe tu clave de Google para generar.")
+      return
+    }
+    localStorage.setItem(AI_KEY_STORAGE, key)
+    setBusy(kind)
+    setError(null)
+    setMessage(kind === "image" ? "Generando imagen…" : "Generando fondo…")
+    try {
+      const res = await fetch(kind === "image" ? "/api/generate-image" : "/api/generate-background", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          kind === "image"
+            ? { itemName: title.trim(), itemDescription: text.trim(), apiKey: key }
+            : {
+                apiKey: key,
+                complexity: "detailed",
+                userStyle: text.trim() || "acuarela suave sobre papel antiguo, sin figuras ni texto",
+              },
+        ),
+      })
+      const data = (await res.json()) as { image?: string; error?: string; missingApiKey?: boolean }
+      if (data.missingApiKey || res.status === 401) {
+        setShowKey(true)
+        setError("La clave no es válida. Revísala e inténtalo de nuevo.")
+        return
+      }
+      if (!res.ok || !data.image) {
+        throw new Error(data.error || "Error al generar")
+      }
+      if (kind === "image") {
+        onImage(await compressImageDataUrl(data.image))
+        setMessage("Imagen lista. Guarda el punto de libro para conservarla.")
+      } else {
+        onBackground(data.image)
+        setMessage("Fondo listo. Guarda el punto de libro para conservarlo.")
+      }
+    } catch {
+      setError("No se pudo generar. Revisa la clave e inténtalo de nuevo.")
+      setMessage(null)
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3 border-t border-[#ddd4c6] pt-5">
+      <h2 className="text-base font-medium">Generar con IA</h2>
+      <p className="text-sm leading-relaxed text-[#5e564c]">
+        Ilustración para el frente o fondo decorativo. Usa el título y el texto del reverso.
+      </p>
+      <div className="flex flex-wrap gap-3">
+        <button type="button" onClick={() => void generate("image")} disabled={busy !== null} className={secondaryButtonClass}>
+          {busy === "image" ? "Generando imagen…" : "Generar imagen"}
+        </button>
+        <button type="button" onClick={() => void generate("background")} disabled={busy !== null} className={secondaryButtonClass}>
+          {busy === "background" ? "Generando fondo…" : "Generar fondo"}
+        </button>
+      </div>
+      {showKey ? (
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="ai-key" className="text-sm font-medium">
+            Clave de Google
+          </label>
+          <input
+            id="ai-key"
+            type="password"
+            value={apiKey}
+            autoComplete="off"
+            onChange={(event) => setApiKey(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") event.preventDefault()
+            }}
+            className={inputClass}
+          />
+        </div>
+      ) : (
+        apiKey && (
+          <button type="button" onClick={() => setShowKey(true)} className="self-start text-sm font-medium underline">
+            Cambiar clave
+          </button>
+        )
+      )}
+      {message && (
+        <p role="status" className="text-sm text-[#2f6b45]">
+          {message}
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="text-sm text-[#8f2d2d]">
+          {error}
+        </p>
+      )}
+    </div>
   )
 }
 

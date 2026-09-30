@@ -30,7 +30,21 @@ describe("parseStoredItem", () => {
       colorFront: "#112233",
       colorBack: "#abcdef",
       image: "data:image/webp;base64,abc",
+      background: null,
     })
+  })
+
+  it("guarda el fondo generado", () => {
+    const bookmark = parseStoredItem({
+      id: "b4",
+      title: "Fondo",
+      subtitle: "",
+      description: "",
+      extra: JSON.stringify({ background: "data:image/webp;base64,fondo" }),
+    })
+    expect(bookmark.background).toBe("data:image/webp;base64,fondo")
+    const payload = draftToPayload(bookmark)
+    expect(JSON.parse(payload.extra).background).toBe("data:image/webp;base64,fondo")
   })
 
   it("usa valores seguros si el extra está vacío o mal formado", () => {
