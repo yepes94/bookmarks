@@ -1,57 +1,80 @@
-import { test, expect } from "@playwright/test"
+import { test, expect, type Page } from "@playwright/test"
 
-test.describe("Project flow", () => {
-  test("shows project selector when no project is selected", async ({ page }) => {
-    await page.goto("/")
-    await expect(page.getByRole("heading", { name: /Puntos de Libro/i })).toBeVisible()
-    await expect(page.getByText(/Selecciona o crea un proyecto/i)).toBeVisible()
+async function clearLibrary(page: Page) {
+  await page.goto("/")
+  await expect(page.getByRole("heading", { name: "Puntos de libro" })).toBeVisible()
+
+  for (let i = 0; i < 30; i++) {
+    const empty = page.getByRole("heading", { name: "Todavía no hay puntos de libro" })
+    if (await empty.isVisible().catch(() => false)) return
+
+    const search = page.getByLabel("Buscar")
+    if (await search.isVisible().catch(() => false)) {
+      await search.fill("")
+    }
+
+    const open = page.getByRole("button", { name: /^Abrir / }).first()
+    await open.click()
+    await page.getByRole("button", { name: "Eliminar" }).click()
+    await page.getByRole("dialog").getByRole("button", { name: "Eliminar" }).click()
+  }
+}
+
+test.describe("Puntos de libro", () => {
+  test.describe.configure({ mode: "serial" })
+
+  test("crea, abre, edita y elimina un punto de libro", async ({ page }) => {
+    const title = "Para Ana " + Date.now()
+    const edited = title + " editado"
+
+    await clearLibrary(page)
+    await expect(page.getByRole("heading", { name: "Todavía no hay puntos de libro" })).toBeVisible()
+
+    await page.getByRole("button", { name: "Nuevo punto de libro" }).click()
+    await expect(page.getByRole("heading", { name: "Nuevo punto de libro" })).toBeVisible()
+
+    await page.getByLabel("Título").fill(title)
+    await page.getByLabel("Subtítulo").fill("Marzo")
+    await page.getByLabel("Texto del reverso").fill("Que este libro te acompañe.")
+    await page.getByRole("button", { name: "Guardar" }).click()
+    await expect(page.getByRole("status")).toHaveText("Guardado")
+
+    await page.getByRole("button", { name: "Volver" }).click()
+    await expect(page.getByRole("button", { name: `Abrir ${title}` })).toBeVisible()
+
+    await page.getByRole("button", { name: `Abrir ${title}` }).click()
+    await expect(page.getByRole("heading", { name: "Editar punto de libro" })).toBeVisible()
+    await page.getByLabel("Título").fill(edited)
+    await page.getByRole("button", { name: "Guardar" }).click()
+    await expect(page.getByRole("status")).toHaveText("Guardado")
+
+    await page.getByRole("button", { name: "Volver" }).click()
+    await expect(page.getByRole("button", { name: `Abrir ${edited}` })).toBeVisible()
+
+    await page.getByRole("button", { name: `Abrir ${edited}` }).click()
+    await page.getByRole("button", { name: "Eliminar" }).click()
+    await page.getByRole("dialog").getByRole("button", { name: "Eliminar" }).click()
+
+    await expect(page.getByRole("heading", { name: "Todavía no hay puntos de libro" })).toBeVisible()
   })
 
-  test("creates a new project and opens editor or empty project screen", async ({
-    page,
-  }) => {
+  test("la búsqueda vacía explica que no hay coincidencias", async ({ page }) => {
+    const title = "Busqueda " + Date.now()
+
     await page.goto("/")
-    await page.getByRole("button", { name: /Crear proyecto/i }).click()
+    await page.getByRole("button", { name: "Nuevo punto de libro" }).click()
+    await page.getByLabel("Título").fill(title)
+    await page.getByRole("button", { name: "Guardar" }).click()
+    await expect(page.getByRole("status")).toHaveText("Guardado")
+    await page.getByRole("button", { name: "Volver" }).click()
 
-    await expect(page.getByRole("heading", { name: /Crear proyecto/i })).toBeVisible()
-    const nameInput = page.getByPlaceholder(/Mi proyecto/i)
-    await nameInput.fill("Test E2E " + Date.now())
-    await page.getByRole("combobox").selectOption("santos")
-    await page.getByRole("button", { name: /Crear/i }).click()
+    await page.getByLabel("Buscar").fill("no-existe-xyz")
+    await expect(page.getByRole("heading", { name: "Ningún punto de libro coincide" })).toBeVisible()
+    await page.getByRole("button", { name: "Limpiar búsqueda" }).click()
+    await expect(page.getByRole("button", { name: `Abrir ${title}` })).toBeVisible()
 
-    await expect(page.getByRole("heading", { name: /Puntos de Libro/i })).toBeVisible({
-      timeout: 10000,
-    })
-  })
-
-  test("navigates back to projects from editor", async ({ page }) => {
-    await page.goto("/")
-    await page.getByRole("button", { name: /Crear proyecto/i }).click()
-    const nameInput = page.getByPlaceholder(/Mi proyecto/i)
-    await nameInput.fill("Back Test " + Date.now())
-    await page.getByRole("combobox").selectOption("santos")
-    await page.getByRole("button", { name: /Crear/i }).click()
-
-    await expect(page.getByRole("heading", { name: /Puntos de Libro/i })).toBeVisible({
-      timeout: 10000,
-    })
-
-    await page.getByRole("button", { name: /Proyectos/i }).first().click()
-
-    await expect(page.getByRole("heading", { name: /Puntos de Libro/i })).toBeVisible()
-  })
-
-  test("empty project shows add manual ficha and load saints options", async ({
-    page,
-  }) => {
-    await page.goto("/")
-    await page.getByRole("button", { name: /Crear proyecto/i }).click()
-    const nameInput = page.getByPlaceholder(/Mi proyecto/i)
-    await nameInput.fill("Empty " + Date.now())
-    await page.getByRole("combobox").selectOption("ciudades")
-    await page.getByRole("button", { name: /Crear/i }).click()
-
-    await expect(page.getByText(/Proyecto sin fichas/i)).toBeVisible({ timeout: 10000 })
-    await expect(page.getByText(/Añadir ficha manual/i)).toBeVisible()
+    await page.getByRole("button", { name: `Abrir ${title}` }).click()
+    await page.getByRole("button", { name: "Eliminar" }).click()
+    await page.getByRole("dialog").getByRole("button", { name: "Eliminar" }).click()
   })
 })

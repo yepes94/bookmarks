@@ -8,8 +8,7 @@ const _inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 
 export const metadata: Metadata = {
   title: "Creador de Puntos de Libro",
-  description:
-    "Herramienta para crear puntos de libro con estilo de linografia y acuarela, listos para imprimir.",
+  description: "Crea, guarda e imprime puntos de libro.",
   icons: {
     icon: [
       {
