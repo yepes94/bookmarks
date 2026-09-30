@@ -36,6 +36,7 @@ interface BookmarkFrontProps {
   aiPromptDefault?: string
   aiPromptCustom?: string
   onAiPromptChange?: (prompt: string) => void
+  finishedImage?: string | null
 }
 
 function EditableText({
@@ -452,7 +453,17 @@ export function BookmarkFront({
   aiPromptDefault,
   aiPromptCustom,
   onAiPromptChange,
+  finishedImage,
 }: BookmarkFrontProps) {
+  if (finishedImage) {
+    return (
+      <div className="bookmark-side bookmark-front bookmark-finished">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={finishedImage} alt="" className="bookmark-finished-image" />
+      </div>
+    )
+  }
+
   const bg = itemBackground ?? defaultItemBackground
   const imageRemoved = customImage === ""
   const displayImage = imageRemoved ? null : (customImage || item.image)

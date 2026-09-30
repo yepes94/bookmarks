@@ -1,6 +1,7 @@
 import { generateText } from "ai"
 import { createGoogleGenerativeAI } from "@ai-sdk/google"
 import sharp from "sharp"
+import { buildBackPiecePrompt } from "@/lib/bookmark-prompts"
 
 export const maxDuration = 60
 
@@ -8,7 +9,7 @@ const BM_WIDTH = 440
 const BM_HEIGHT = 1360
 
 export async function POST(req: Request) {
-  const { apiKey, model, userStyle, complexity } = await req.json()
+  const { apiKey, model, userStyle, complexity, text, side } = await req.json()
 
   const resolvedKey = apiKey || process.env.GOOGLE_GENERATIVE_AI_API_KEY
   if (!resolvedKey) {
@@ -41,7 +42,10 @@ NEGATIVE CONSTRAINTS:
 - Semi-transparent feel — the background should not overpower foreground content
 - Beautiful, reverent aesthetic suitable for a bookmark`
 
-  const stylePrompt = basePrompt + "\n\n" + (resolvedComplexity === "simple" ? simpleStyle : detailedStyle)
+  const finishedBack = side === "back" || typeof text === "string"
+  const stylePrompt = finishedBack
+    ? buildBackPiecePrompt(typeof text === "string" ? text : "")
+    : basePrompt + "\n\n" + (resolvedComplexity === "simple" ? simpleStyle : detailedStyle)
 
   try {
     const result = await generateText({

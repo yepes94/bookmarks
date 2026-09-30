@@ -13,9 +13,19 @@ interface BookmarkBackProps {
   template?: BookmarkTemplate
   backgroundImage?: string | null
   itemBackground?: ItemBackground | null
+  finishedImage?: string | null
 }
 
-export function BookmarkBack({ item, customColors, template = defaultTemplate, backgroundImage, itemBackground }: BookmarkBackProps) {
+export function BookmarkBack({ item, customColors, template = defaultTemplate, backgroundImage, itemBackground, finishedImage }: BookmarkBackProps) {
+  if (finishedImage) {
+    return (
+      <div className="bookmark-side bookmark-back bookmark-finished">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={finishedImage} alt="" className="bookmark-finished-image" />
+      </div>
+    )
+  }
+
   const bg = itemBackground ?? defaultItemBackground
   const colorBack = customColors?.colorBack || item.colorBack
   const showBg = template.showBackgroundImage && backgroundImage

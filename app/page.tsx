@@ -110,6 +110,8 @@ export default function HomePage() {
       colorBack: bookmark.colorBack,
       image: bookmark.image,
       background: bookmark.background,
+      frontGenerated: bookmark.frontGenerated,
+      backGenerated: bookmark.backGenerated,
     }
     setEditingId(bookmark.id)
     setDraft(next)
@@ -154,7 +156,7 @@ export default function HomePage() {
     setFormError(null)
     const dataUrl = await readFile(file)
     const compressed = await compressImageDataUrl(dataUrl)
-    updateDraft({ image: compressed })
+    updateDraft({ image: compressed, frontGenerated: false })
   }
 
   const save = async () => {
@@ -444,16 +446,17 @@ export default function HomePage() {
 
               <GenerateWithAi
                 title={draft.title}
+                subtitle={draft.subtitle}
                 text={draft.text}
-                onImage={(image) => updateDraft({ image })}
-                onBackground={(background) => updateDraft({ background })}
+                onImage={(image) => updateDraft({ image, frontGenerated: true })}
+                onBackground={(background) => updateDraft({ background, backGenerated: true })}
               />
 
               {draft.image && (
                 <div className="flex items-center gap-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={draft.image} alt="" className="h-16 w-12 rounded-sm border border-[#d5ccbf] object-cover" />
-                  <button type="button" onClick={() => updateDraft({ image: null })} className={secondaryButtonClass}>
+                  <button type="button" onClick={() => updateDraft({ image: null, frontGenerated: false })} className={secondaryButtonClass}>
                     Quitar imagen
                   </button>
                 </div>
@@ -463,7 +466,7 @@ export default function HomePage() {
                 <div className="flex items-center gap-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={draft.background} alt="" className="h-16 w-12 rounded-sm border border-[#d5ccbf] object-cover" />
-                  <button type="button" onClick={() => updateDraft({ background: null })} className={secondaryButtonClass}>
+                  <button type="button" onClick={() => updateDraft({ background: null, backGenerated: false })} className={secondaryButtonClass}>
                     Quitar fondo
                   </button>
                 </div>
@@ -491,9 +494,9 @@ export default function HomePage() {
                   <div className="preview-scale">
                     <BookmarkFront
                       item={previewItem}
-                      customImage={draft.image}
+                      customImage={draft.frontGenerated ? null : draft.image}
                       template={template}
-                      itemBackground={previewBackground}
+                      finishedImage={draft.frontGenerated ? draft.image : null}
                       editable={false}
                     />
                   </div>
@@ -503,7 +506,12 @@ export default function HomePage() {
                 <p className="no-print text-sm font-medium text-[#5e564c]">Reverso</p>
                 <div className="preview-frame">
                   <div className="preview-scale">
-                    <BookmarkBack item={previewItem} template={template} itemBackground={previewBackground} />
+                    <BookmarkBack
+                      item={previewItem}
+                      template={draft.backGenerated ? { ...template, showDescription: false, showDots: false } : template}
+                      itemBackground={draft.backGenerated ? null : previewBackground}
+                      finishedImage={draft.backGenerated ? draft.background : null}
+                    />
                   </div>
                 </div>
               </div>
@@ -570,10 +578,16 @@ function SheetsScreen({
 }) {
   const customImages: Record<string, string> = {}
   const itemBackgrounds: Record<string, ItemBackground> = {}
+  const finishedFronts: Record<string, string> = {}
+  const finishedBacks: Record<string, string> = {}
   for (const bookmark of selected) {
-    if (bookmark.image) customImages[bookmark.id] = bookmark.image
-    const background = itemBackgroundFor(bookmark.background)
-    if (background) itemBackgrounds[bookmark.id] = background
+    if (bookmark.frontGenerated && bookmark.image) finishedFronts[bookmark.id] = bookmark.image
+    else if (bookmark.image) customImages[bookmark.id] = bookmark.image
+    if (bookmark.backGenerated && bookmark.background) finishedBacks[bookmark.id] = bookmark.background
+    else {
+      const background = itemBackgroundFor(bookmark.background)
+      if (background) itemBackgrounds[bookmark.id] = background
+    }
   }
 
   const sheetTemplate = {
@@ -615,6 +629,8 @@ function SheetsScreen({
           customImages={customImages}
           template={sheetTemplate}
           itemBackgrounds={itemBackgrounds}
+          finishedFronts={finishedFronts}
+          finishedBacks={finishedBacks}
         />
       </div>
     </div>
@@ -625,11 +641,13 @@ const AI_LEGACY_KEY = "santos-ai-google-key"
 
 function GenerateWithAi({
   title,
+  subtitle,
   text,
   onImage,
   onBackground,
 }: {
   title: string
+  subtitle: string
   text: string
   onImage: (dataUrl: string) => void
   onBackground: (dataUrl: string) => void
@@ -650,6 +668,10 @@ function GenerateWithAi({
       setError("Escribe un título antes de generar la imagen.")
       return
     }
+    if (kind === "background" && !text.trim()) {
+      setError("Escribe el texto del reverso antes de generar el fondo.")
+      return
+    }
     const key = apiKey.trim()
     if (!key) {
       setShowKey(true)
@@ -666,12 +688,8 @@ function GenerateWithAi({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           kind === "image"
-            ? { itemName: title.trim(), itemDescription: text.trim(), apiKey: key }
-            : {
-                apiKey: key,
-                complexity: "detailed",
-                userStyle: text.trim() || "acuarela suave sobre papel antiguo, sin figuras ni texto",
-              },
+            ? { side: "front", title: title.trim(), subtitle, itemName: title.trim(), apiKey: key }
+            : { side: "back", text: text.trim(), apiKey: key },
         ),
       })
       const data = (await res.json()) as { image?: string; error?: string; missingApiKey?: boolean }
@@ -685,10 +703,10 @@ function GenerateWithAi({
       }
       if (kind === "image") {
         onImage(await compressImageDataUrl(data.image))
-        setMessage("Imagen lista. Guarda el punto de libro para conservarla.")
+        setMessage("Frente listo, con el título ya dentro de la imagen. Guarda para conservarlo.")
       } else {
         onBackground(data.image)
-        setMessage("Fondo listo. Guarda el punto de libro para conservarlo.")
+        setMessage("Reverso listo, con el texto ya dentro de la imagen. Guarda para conservarlo.")
       }
     } catch {
       setError("No se pudo generar. Revisa la clave e inténtalo de nuevo.")
@@ -702,7 +720,7 @@ function GenerateWithAi({
     <div className="flex flex-col gap-3 border-t border-[#ddd4c6] pt-5">
       <h2 className="text-base font-medium">Generar con IA</h2>
       <p className="text-sm leading-relaxed text-[#5e564c]">
-        Ilustración para el frente o fondo decorativo. Usa el título y el texto del reverso.
+        La imagen es el frente completo, con el título y el subtítulo escritos dentro. El fondo es el reverso completo, con su texto escrito dentro.
       </p>
       <div className="flex flex-wrap gap-3">
         <button type="button" onClick={() => void generate("image")} disabled={busy !== null} className={secondaryButtonClass}>

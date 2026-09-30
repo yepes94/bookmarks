@@ -1,19 +1,32 @@
 import { generateText } from "ai"
 import { createGoogleGenerativeAI } from "@ai-sdk/google"
+import { buildFrontPiecePrompt } from "@/lib/bookmark-prompts"
 import { buildItemPrompt } from "@/lib/visual-details"
 
 export const maxDuration = 60
 
 export async function POST(req: Request) {
-  const body = (await req.json()) as { itemName?: unknown; itemDescription?: unknown; apiKey?: unknown; model?: unknown; customPrompt?: unknown; prompt?: unknown; projectPromptTemplate?: unknown }
+  const body = (await req.json()) as {
+    itemName?: unknown
+    itemDescription?: unknown
+    apiKey?: unknown
+    model?: unknown
+    customPrompt?: unknown
+    prompt?: unknown
+    projectPromptTemplate?: unknown
+    title?: unknown
+    subtitle?: unknown
+    side?: unknown
+  }
   const itemName = typeof body.itemName === "string" ? body.itemName : (body as { saintName?: unknown }).saintName
+  const title = typeof body.title === "string" && body.title.trim() ? body.title : itemName
   const itemDescription = typeof body.itemDescription === "string" ? body.itemDescription : (body as { saintDescription?: unknown }).saintDescription
   const apiKey = body.apiKey
   const model = body.model
   const clientPrompt = typeof body.prompt === "string" ? body.prompt.trim() : null
   const customPrompt = typeof body.customPrompt === "string" ? body.customPrompt.trim() : null
 
-  if (!itemName) {
+  if (!title || typeof title !== "string") {
     return Response.json({ error: "Item name is required" }, { status: 400 })
   }
 
@@ -26,8 +39,12 @@ export async function POST(req: Request) {
   const resolvedModel = (typeof model === "string" ? model : null) ?? "gemini-2.0-flash-preview-image-generation"
 
   const projTemplate = typeof body.projectPromptTemplate === "string" ? body.projectPromptTemplate : undefined
-  const stylePrompt = clientPrompt || customPrompt
-    || buildItemPrompt(itemName, typeof itemDescription === "string" ? itemDescription : undefined, undefined, projTemplate)
+  const subtitle = typeof body.subtitle === "string" ? body.subtitle : ""
+  const finishedFront = body.side === "front" || typeof body.subtitle === "string"
+  const stylePrompt = finishedFront
+    ? buildFrontPiecePrompt(title, subtitle)
+    : clientPrompt || customPrompt
+      || buildItemPrompt(title, typeof itemDescription === "string" ? itemDescription : undefined, undefined, projTemplate)
 
   try {
     const result = await generateText({

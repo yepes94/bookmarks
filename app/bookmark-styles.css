@@ -3,6 +3,19 @@
    =========================================== */
 
 /* Bookmark dimensions: 5.5cm x 17cm (approx 2.17in x 6.69in) */
+.bookmark-side.bookmark-finished::before {
+  display: none;
+}
+
+.bookmark-finished-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
 .bookmark-side {
   position: relative;
   width: 220px;

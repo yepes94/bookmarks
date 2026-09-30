@@ -18,6 +18,8 @@ interface PrintViewProps {
   customTexts?: Record<string, CustomItemTexts>
   itemBackgrounds?: Record<string, ItemBackground>
   itemImageSizes?: Record<string, ItemImageSize>
+  finishedFronts?: Record<string, string>
+  finishedBacks?: Record<string, string>
 }
 
 /**
@@ -34,7 +36,7 @@ interface PrintViewProps {
 
 const BOOKMARKS_PER_SHEET = 4
 
-export function PrintView({ selectedItems, year, customImages = {}, customColors = {}, backgroundPool = [], bgAssignments = {}, template, customTexts = {}, itemBackgrounds = {}, itemImageSizes = {} }: PrintViewProps) {
+export function PrintView({ selectedItems, year, customImages = {}, customColors = {}, backgroundPool = [], bgAssignments = {}, template, customTexts = {}, itemBackgrounds = {}, itemImageSizes = {}, finishedFronts = {}, finishedBacks = {} }: PrintViewProps) {
   const getBackground = (itemId: string): string | null => {
     if (backgroundPool.length === 0) return null
     const assigned = bgAssignments[itemId]
@@ -103,13 +105,14 @@ export function PrintView({ selectedItems, year, customImages = {}, customColors
                     <BookmarkFront
                       item={item}
                       year={year}
-                      customImage={customImages[item.id] ?? null}
+                      customImage={finishedFronts[item.id] ? null : (customImages[item.id] ?? null)}
                       customColors={customColors[item.id] || null}
                       template={template}
-                      backgroundImage={getBackground(item.id)}
+                      backgroundImage={finishedFronts[item.id] ? null : getBackground(item.id)}
                       customTexts={customTexts[item.id]}
-                      itemBackground={itemBackgrounds[item.id]}
+                      itemBackground={finishedFronts[item.id] ? null : itemBackgrounds[item.id]}
                       itemImageSize={itemImageSizes[item.id]}
+                      finishedImage={finishedFronts[item.id] ?? null}
                     />
                   </div>
                 ))}
@@ -139,8 +142,9 @@ export function PrintView({ selectedItems, year, customImages = {}, customColors
                       item={item}
                       customColors={customColors[item.id] || null}
                       template={template}
-                      backgroundImage={getBackground(item.id)}
-                      itemBackground={itemBackgrounds[item.id]}
+                      backgroundImage={finishedBacks[item.id] ? null : getBackground(item.id)}
+                      itemBackground={finishedBacks[item.id] ? null : itemBackgrounds[item.id]}
+                      finishedImage={finishedBacks[item.id] ?? null}
                     />
                   </div>
                 ))}

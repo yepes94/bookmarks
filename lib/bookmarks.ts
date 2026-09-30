@@ -15,6 +15,8 @@ export type BookmarkDraft = {
   colorBack: string
   image: string | null
   background: string | null
+  frontGenerated: boolean
+  backGenerated: boolean
 }
 
 export type StoredBookmark = BookmarkDraft & { id: string }
@@ -36,6 +38,8 @@ export function emptyDraft(): BookmarkDraft {
     colorBack: DEFAULT_COLOR_BACK,
     image: null,
     background: null,
+    frontGenerated: false,
+    backGenerated: false,
   }
 }
 
@@ -103,6 +107,8 @@ export function parseStoredItem(item: BookmarkRecord): StoredBookmark {
     colorBack: readColor(extra.colorBack, DEFAULT_COLOR_BACK),
     image: readImage(extra.image),
     background: readImage(extra.background),
+    frontGenerated: extra.frontGenerated === true && readImage(extra.image) !== null,
+    backGenerated: extra.backGenerated === true && readImage(extra.background) !== null,
   }
 }
 
@@ -116,6 +122,8 @@ export function draftToPayload(draft: BookmarkDraft) {
       colorBack: draft.colorBack,
       image: draft.image,
       background: draft.background,
+      frontGenerated: draft.frontGenerated,
+      backGenerated: draft.backGenerated,
     }),
   }
 }
@@ -129,6 +137,8 @@ export function snapshotDraft(draft: BookmarkDraft): string {
     colorBack: draft.colorBack,
     image: draft.image,
     background: draft.background,
+    frontGenerated: draft.frontGenerated,
+    backGenerated: draft.backGenerated,
   })
 }
 

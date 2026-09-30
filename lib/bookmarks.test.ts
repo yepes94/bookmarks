@@ -31,6 +31,8 @@ describe("parseStoredItem", () => {
       colorBack: "#abcdef",
       image: "data:image/webp;base64,abc",
       background: null,
+      frontGenerated: false,
+      backGenerated: false,
     })
   })
 
@@ -43,6 +45,20 @@ describe("parseStoredItem", () => {
       extra: JSON.stringify({ background: "data:image/webp;base64,fondo" }),
     })
     expect(bookmark.background).toBe("data:image/webp;base64,fondo")
+    expect(bookmark.backGenerated).toBe(false)
+    const generated = parseStoredItem({
+      id: "b5",
+      title: "Fondo",
+      subtitle: "",
+      description: "Texto",
+      extra: JSON.stringify({
+        background: "data:image/webp;base64,fondo",
+        backGenerated: true,
+        frontGenerated: true,
+      }),
+    })
+    expect(generated.backGenerated).toBe(true)
+    expect(generated.frontGenerated).toBe(false)
     const payload = draftToPayload(bookmark)
     expect(JSON.parse(payload.extra).background).toBe("data:image/webp;base64,fondo")
   })
